@@ -269,6 +269,134 @@
             </div>
         </div>
 
+        <div class="asset-card">
+            <h2>Pipe Assets (Variant A)</h2>
+
+            <!-- Top Pipe A Cap -->
+            <div class="asset-row">
+                <span class="asset-label">Top Cap A</span>
+                <img id="topAPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="topAFile" accept="image/*" onchange="handleAssetUpload('topA', this)">
+                    </label>
+                    <span id="topAFileName" class="file-name">Using default</span>
+                    <div class="hint">Pipe opening at bottom</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('topA')" title="Remove">&times;</button>
+            </div>
+
+            <!-- Top Pipe A Extension -->
+            <div class="asset-row">
+                <span class="asset-label">Top Ext A</span>
+                <img id="topA-extPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="topA-extFile" accept="image/*" onchange="handleAssetUpload('topA-ext', this)">
+                    </label>
+                    <span id="topA-extFileName" class="file-name">Using default</span>
+                    <div class="hint">Tileable pipe body</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('topA-ext')" title="Remove">&times;</button>
+            </div>
+
+            <!-- Bottom Pipe A Cap -->
+            <div class="asset-row">
+                <span class="asset-label">Bottom Cap A</span>
+                <img id="bottomAPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="bottomAFile" accept="image/*" onchange="handleAssetUpload('bottomA', this)">
+                    </label>
+                    <span id="bottomAFileName" class="file-name">Using default</span>
+                    <div class="hint">Pipe opening at top</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('bottomA')" title="Remove">&times;</button>
+            </div>
+
+            <!-- Bottom Pipe A Extension -->
+            <div class="asset-row">
+                <span class="asset-label">Bottom Ext A</span>
+                <img id="bottomA-extPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="bottomA-extFile" accept="image/*" onchange="handleAssetUpload('bottomA-ext', this)">
+                    </label>
+                    <span id="bottomA-extFileName" class="file-name">Using default</span>
+                    <div class="hint">Tileable pipe body</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('bottomA-ext')" title="Remove">&times;</button>
+            </div>
+        </div>
+
+        <div class="asset-card">
+            <h2>Pipe Assets (Variant B)</h2>
+
+            <!-- Top Pipe B Cap -->
+            <div class="asset-row">
+                <span class="asset-label">Top Cap B</span>
+                <img id="topBPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="topBFile" accept="image/*" onchange="handleAssetUpload('topB', this)">
+                    </label>
+                    <span id="topBFileName" class="file-name">Using default</span>
+                    <div class="hint">Pipe opening at bottom</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('topB')" title="Remove">&times;</button>
+            </div>
+
+            <!-- Top Pipe B Extension -->
+            <div class="asset-row">
+                <span class="asset-label">Top Ext B</span>
+                <img id="topB-extPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="topB-extFile" accept="image/*" onchange="handleAssetUpload('topB-ext', this)">
+                    </label>
+                    <span id="topB-extFileName" class="file-name">Using default</span>
+                    <div class="hint">Tileable pipe body</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('topB-ext')" title="Remove">&times;</button>
+            </div>
+
+            <!-- Bottom Pipe B Cap -->
+            <div class="asset-row">
+                <span class="asset-label">Bottom Cap B</span>
+                <img id="bottomBPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="bottomBFile" accept="image/*" onchange="handleAssetUpload('bottomB', this)">
+                    </label>
+                    <span id="bottomBFileName" class="file-name">Using default</span>
+                    <div class="hint">Pipe opening at top</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('bottomB')" title="Remove">&times;</button>
+            </div>
+
+            <!-- Bottom Pipe B Extension -->
+            <div class="asset-row">
+                <span class="asset-label">Bottom Ext B</span>
+                <img id="bottomB-extPreview" class="image-preview empty" src="" alt="">
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-btn">
+                        Choose Image
+                        <input type="file" id="bottomB-extFile" accept="image/*" onchange="handleAssetUpload('bottomB-ext', this)">
+                    </label>
+                    <span id="bottomB-extFileName" class="file-name">Using default</span>
+                    <div class="hint">Tileable pipe body</div>
+                </div>
+                <button type="button" class="remove-btn" onclick="clearAsset('bottomB-ext')" title="Remove">&times;</button>
+            </div>
+        </div>
+
         <div class="buttons">
             <button class="reset-btn" onclick="resetAllAssets()">Reset All to Default</button>
             <button class="save-btn" id="saveBtn" onclick="saveAssets()">Save Assets</button>
@@ -288,7 +416,11 @@
         const STORE_NAME = 'customAssets';
         let db = null;
 
-        const ASSET_KEYS = ['bird', 'background', 'ground'];
+        const ASSET_KEYS = [
+            'bird', 'background', 'ground',
+            'topA', 'topA-ext', 'bottomA', 'bottomA-ext',
+            'topB', 'topB-ext', 'bottomB', 'bottomB-ext'
+        ];
 
         // Initialize IndexedDB
         function initDB() {
@@ -362,11 +494,9 @@
         // Asset State
         // ============================================================================
 
-        let pendingAssets = {
-            bird: null,
-            background: null,
-            ground: null
-        };
+        let pendingAssets = {};
+        // Initialize all asset keys
+        ASSET_KEYS.forEach(key => pendingAssets[key] = null);
 
         // ============================================================================
         // UI Functions

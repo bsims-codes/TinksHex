@@ -118,7 +118,11 @@ const AssetManager = {
         try {
             await this.initDB();
 
-            const customKeys = ['bird', 'background', 'ground'];
+            const customKeys = [
+                'bird', 'background', 'ground',
+                'topA', 'topA-ext', 'bottomA', 'bottomA-ext',
+                'topB', 'topB-ext', 'bottomB', 'bottomB-ext'
+            ];
             for (const key of customKeys) {
                 const blob = await this.getCustomImage(key);
                 if (blob) {
@@ -205,8 +209,9 @@ const AssetManager = {
     drawPipeImage(ctx, x, y, w, h, isTop, variant) {
         const capKey = isTop ? `top${variant}` : `bottom${variant}`;
         const extKey = isTop ? `top${variant}-ext` : `bottom${variant}-ext`;
-        const capImg = this.images[capKey];
-        const extImg = this.images[extKey];
+        // Use custom images if available, otherwise fall back to defaults
+        const capImg = this.customImages[capKey] || this.images[capKey];
+        const extImg = this.customImages[extKey] || this.images[extKey];
 
         // Overlap amount to hide seams between cap and extensions
         const OVERLAP = 30;
@@ -434,6 +439,10 @@ function resetGame() {
     pipeTimer = 0;
     score = 0;
 
+    // Reset timing to prevent accumulated time issues
+    lastTime = performance.now();
+    accumulator = 0;
+
     // Reset RNG unless fixed seed
     if (SEED === null) {
         initRNG(null);
@@ -467,6 +476,9 @@ function handleFlap() {
     if (state === GameState.READY) {
         state = GameState.PLAYING;
         bird.vy = FLAP_VELOCITY;
+        // Reset timing to prevent accumulated time from causing instant drop
+        lastTime = performance.now();
+        accumulator = 0;
         playFlap();
     } else if (state === GameState.PLAYING) {
         bird.vy = FLAP_VELOCITY;
@@ -740,9 +752,15 @@ function gameLoop(currentTime) {
     const dt = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
 
-    // Prevent spiral of death
-    const frameDt = Math.min(dt, 0.25);
+    // Prevent spiral of death and handle tab switches
+    // Clamp dt to prevent huge time jumps
+    const frameDt = Math.min(dt, 0.1);
     accumulator += frameDt;
+
+    // Cap accumulator to prevent runaway physics (e.g., after tab switch)
+    if (accumulator > 0.2) {
+        accumulator = 0.2;
+    }
 
     // Fixed timestep updates
     while (accumulator >= FIXED_TIMESTEP) {
