@@ -164,6 +164,8 @@ const AssetManager = {
             // Title screen images
             this.loadImage('titleCard', 'assets/tinkshex-titlecard.png'),
             this.loadImage('playNow', 'assets/tinkshex-playnow.png'),
+            // Decorative elements
+            this.loadImage('palm', 'assets/tink-palm.png'),
             // Pipe caps (the opening part)
             this.loadImage('topA', 'assets/topA.png'),
             this.loadImage('topB', 'assets/TopB.png'),
@@ -493,6 +495,10 @@ function renderParticles(ctx) {
 let score = 0;
 let bestScore = parseInt(localStorage.getItem('flappyBestScore')) || 0;
 
+// Decorative palms (scrolling background)
+let palmOffset = 0;
+const PALM_SPEED = 120; // Slower than pipes for parallax effect
+
 // ============================================
 // GAME FUNCTIONS
 // ============================================
@@ -506,6 +512,7 @@ function resetGame() {
     pipeTimer = 0;
     particles = [];
     trailY = BIRD_START_Y + BIRD_HEIGHT * 0.3;
+    palmOffset = 0;
     score = 0;
 
     // Reset timing to prevent accumulated time issues
@@ -610,6 +617,9 @@ function update(dt) {
         return;
     }
 
+    // Update decorative palm scroll
+    palmOffset += PALM_SPEED * dt;
+
     // Spawn pipes
     pipeTimer += dt;
     if (pipeTimer >= PIPE_SPAWN_INTERVAL) {
@@ -670,6 +680,22 @@ function update(dt) {
 function render(ctx) {
     // Draw background (custom or default sky)
     AssetManager.drawBackground(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Draw decorative scrolling palms (behind pipes)
+    const palmImg = AssetManager.images.palm;
+    if (palmImg && state !== GameState.READY) {
+        const palmWidth = palmImg.width;
+        const palmHeight = palmImg.height;
+        const palmY = GROUND_Y - palmHeight + 10; // Position at ground level
+
+        // Calculate wrapped offset
+        const wrappedOffset = palmOffset % palmWidth;
+
+        // Draw enough palms to cover the screen plus extra for seamless loop
+        for (let x = -wrappedOffset; x < CANVAS_WIDTH + palmWidth; x += palmWidth) {
+            ctx.drawImage(palmImg, x, palmY);
+        }
+    }
 
     // Draw pipes
     for (const pipe of pipes) {
