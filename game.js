@@ -249,6 +249,13 @@ const AssetManager = {
                 // Cap position: bottom edge (opening) at y + h
                 const capY = y + h - capScaledHeight;
 
+                // Add subtle glow effect for ceiling obstacles
+                ctx.save();
+                ctx.shadowColor = '#96eeec';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
                 // Draw cap first (behind)
                 ctx.drawImage(capImg, x, capY, w, capScaledHeight);
 
@@ -266,6 +273,8 @@ const AssetManager = {
                         ctx.drawImage(extImg, x, tileY, w, extScaledHeight);
                     }
                 }
+
+                ctx.restore();
             } else {
                 // Bottom pipe: cap first (behind), then extensions on top
                 // Cap position: top edge (opening) at y
@@ -410,9 +419,31 @@ const AssetManager = {
 };
 
 // ============================================
-// AUDIO STUBS
+// AUDIO
 // ============================================
+let bgMusic = null;
+let musicStarted = false;
+
+function initBackgroundMusic() {
+    bgMusic = new Audio('assets/spencer_yk-little-slimex27s-adventure-151007.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.5;
+}
+
+function startBackgroundMusic() {
+    if (bgMusic && !musicStarted) {
+        bgMusic.play().then(() => {
+            musicStarted = true;
+        }).catch(e => {
+            // Autoplay blocked, will try again on next interaction
+            console.log('Music autoplay blocked, will start on interaction');
+        });
+    }
+}
+
 function playFlap() {
+    // Start music on first interaction (handles autoplay restrictions)
+    startBackgroundMusic();
     // Audio stub - implement when audio assets are available
 }
 
@@ -952,6 +983,10 @@ async function init() {
     } catch (e) {
         console.warn('Some assets failed to load, using fallback shapes:', e);
     }
+
+    // Initialize background music
+    initBackgroundMusic();
+    startBackgroundMusic(); // Try to start (may be blocked by autoplay policy)
 
     initRNG(SEED);
     setupInput();
