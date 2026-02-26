@@ -164,6 +164,7 @@ const AssetManager = {
             // Title screen images
             this.loadImage('titleCard', 'assets/tinkshex-titlecard.png'),
             this.loadImage('playNow', 'assets/tinkshex-playnow.png'),
+            this.loadImage('gameOver', 'assets/tinkandhex-gameover.png'),
             // Decorative elements
             this.loadImage('palm', 'assets/tink-palm.png'),
             // Background and ground
@@ -249,12 +250,32 @@ const AssetManager = {
                 // Cap position: bottom edge (opening) at y + h
                 const capY = y + h - capScaledHeight;
 
-                // Add subtle glow effect for ceiling obstacles
+                // Add glow effect: delay 0.5s, fade in 1.5s, fade out 1s
+                const DELAY = 500; // 0.5 seconds before glow starts
+                const FADE_IN_DURATION = 1500; // 1.5 seconds
+                const FADE_OUT_DURATION = 1000; // 1 second
+                const elapsed = performance.now() - (opts.spawnTime || 0);
+                let glowIntensity;
+                if (elapsed < DELAY) {
+                    // Delay: no glow yet
+                    glowIntensity = 0;
+                } else if (elapsed < DELAY + FADE_IN_DURATION) {
+                    // Fade in: 0 to 1 over 1.5 seconds
+                    glowIntensity = (elapsed - DELAY) / FADE_IN_DURATION;
+                } else if (elapsed < DELAY + FADE_IN_DURATION + FADE_OUT_DURATION) {
+                    // Fade out: 1 to 0 over 1 second
+                    glowIntensity = 1 - (elapsed - DELAY - FADE_IN_DURATION) / FADE_OUT_DURATION;
+                } else {
+                    glowIntensity = 0;
+                }
+
                 ctx.save();
-                ctx.shadowColor = '#96eeec';
-                ctx.shadowBlur = 15;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
+                if (glowIntensity > 0) {
+                    ctx.shadowColor = '#96eeec';
+                    ctx.shadowBlur = 15 * glowIntensity;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                }
 
                 // Draw cap first (behind)
                 ctx.drawImage(capImg, x, capY, w, capScaledHeight);
@@ -602,6 +623,7 @@ function spawnPipePair() {
         ceilingCapVariant: ceilingCapVariant,
         floorExtVariant: floorExtVariant,
         floorCapVariant: floorCapVariant,
+        spawnTime: performance.now(), // Track when pipe was spawned for glow fade
         scored: false
     });
 }
@@ -759,7 +781,8 @@ function render(ctx) {
     for (const pipe of pipes) {
         // Top pipe (ceiling obstacle)
         AssetManager.drawSprite(ctx, 'pipe_top', pipe.x, 0, PIPE_WIDTH, pipe.topHeight, {
-            ceilingCapVariant: pipe.ceilingCapVariant
+            ceilingCapVariant: pipe.ceilingCapVariant,
+            spawnTime: pipe.spawnTime
         });
 
         // Bottom pipe (floor obstacle)
@@ -820,19 +843,24 @@ function render(ctx) {
         ctx.strokeRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
     }
 
-    // Draw score
-    ctx.fillStyle = '#FFF';
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 3;
-    ctx.font = 'bold 48px Arial';
-    ctx.textAlign = 'center';
-    ctx.strokeText(score.toString(), CANVAS_WIDTH / 2, 60);
-    ctx.fillText(score.toString(), CANVAS_WIDTH / 2, 60);
+    // Draw in-game score (hide during game over since it shows separately)
+    if (state !== GameState.GAME_OVER) {
+        ctx.save();
+        ctx.fillStyle = '#FFF';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.font = "bold 48px 'Tinker Bell', Arial";
+        ctx.textAlign = 'center';
+        ctx.letterSpacing = '2px';
+        ctx.strokeText(score.toString(), CANVAS_WIDTH / 2, 60);
+        ctx.fillText(score.toString(), CANVAS_WIDTH / 2, 60);
 
-    // Draw best score
-    ctx.font = 'bold 20px Arial';
-    ctx.strokeText(`Best: ${bestScore}`, CANVAS_WIDTH / 2, 90);
-    ctx.fillText(`Best: ${bestScore}`, CANVAS_WIDTH / 2, 90);
+        // Draw best score
+        ctx.font = "bold 20px 'Tinker Bell', Arial";
+        ctx.strokeText(`Best: ${bestScore}`, CANVAS_WIDTH / 2, 90);
+        ctx.fillText(`Best: ${bestScore}`, CANVAS_WIDTH / 2, 90);
+        ctx.restore();
+    }
 
     // State-specific UI
     if (state === GameState.READY) {
@@ -878,30 +906,54 @@ function render(ctx) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+        // Game Over image - centered with pink glow effect
+        const gameOverImg = AssetManager.images.gameOver;
+        if (gameOverImg) {
+            const imgX = (CANVAS_WIDTH - gameOverImg.width) / 2;
+            const imgY = (CANVAS_HEIGHT - gameOverImg.height) / 2 - 30;
+
+            // Subtle animated pink glow effect
+            const time = performance.now() / 1000;
+            const glowIntensity = 0.6 + 0.4 * Math.sin(time * 3); // Pulsing
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(255, 105, 180, ' + (glowIntensity * 0.5) + ')'; // Semi-transparent pink
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
+            ctx.drawImage(gameOverImg, imgX, imgY);
+
+            ctx.restore();
+        }
+
+        // Score and Best - top right corner (smaller text)
+        ctx.save();
         ctx.fillStyle = '#FFF';
         ctx.strokeStyle = '#000';
-        ctx.lineWidth = 4;
-        ctx.font = 'bold 64px Arial';
+        ctx.lineWidth = 2;
+        ctx.textAlign = 'right';
+        ctx.letterSpacing = '2px';
+
+        ctx.font = "bold 22px 'Tinker Bell', Arial";
+        ctx.strokeText(`Score: ${score}`, CANVAS_WIDTH - 15, 35);
+        ctx.fillText(`Score: ${score}`, CANVAS_WIDTH - 15, 35);
+
+        ctx.strokeText(`Best: ${bestScore}`, CANVAS_WIDTH - 15, 62);
+        ctx.fillText(`Best: ${bestScore}`, CANVAS_WIDTH - 15, 62);
+
+        // Restart text - bottom center
         ctx.textAlign = 'center';
-        ctx.strokeText('GAME OVER', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 80);
-        ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 80);
-
-        ctx.font = 'bold 36px Arial';
-        ctx.strokeText(`Score: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 10);
-        ctx.fillText(`Score: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 10);
-
-        ctx.strokeText(`Best: ${bestScore}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
-        ctx.fillText(`Best: ${bestScore}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
-
-        ctx.font = 'bold 24px Arial';
-        ctx.strokeText('Press R or Tap to Restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 100);
-        ctx.fillText('Press R or Tap to Restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 100);
+        ctx.font = "bold 24px 'Tinker Bell', Arial";
+        ctx.strokeText('Press R or Tap to Restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30);
+        ctx.fillText('Press R or Tap to Restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30);
+        ctx.restore();
     }
 
     // Debug mode indicator
     if (debugMode) {
         ctx.fillStyle = '#FF0';
-        ctx.font = 'bold 16px Arial';
+        ctx.font = "bold 16px 'Tinker Bell', Arial";
         ctx.textAlign = 'left';
         ctx.fillText('DEBUG MODE', 10, 25);
     }
