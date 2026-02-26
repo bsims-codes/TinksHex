@@ -167,6 +167,7 @@ const AssetManager = {
             this.loadImage('gameOver', 'assets/tinkandhex-gameover.png'),
             // Decorative elements
             this.loadImage('palm', 'assets/tink-palm.png'),
+            this.loadImage('palm2', 'assets/tink-palm2.png'),
             // Background and ground
             this.loadImage('background', 'assets/background.png'),
             this.loadImage('ground', 'assets/tinkandhexie-floor.png'),
@@ -571,6 +572,7 @@ let bestScore = parseInt(localStorage.getItem('flappyBestScore')) || 0;
 // Decorative palms (scrolling background)
 let palmOffset = 0;
 const PALM_SPEED = 120; // Slower than pipes for parallax effect
+let palmPattern = []; // Array of 0s and 1s to randomly alternate palm images
 
 // ============================================
 // GAME FUNCTIONS
@@ -586,6 +588,7 @@ function resetGame() {
     particles = [];
     trailY = BIRD_START_Y + BIRD_HEIGHT * 0.3;
     palmOffset = 0;
+    palmPattern = [];
     score = 0;
 
     // Reset timing to prevent accumulated time issues
@@ -762,18 +765,31 @@ function render(ctx) {
     AssetManager.drawBackground(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Draw decorative scrolling palms (behind pipes)
-    const palmImg = AssetManager.images.palm;
-    if (palmImg && state !== GameState.READY) {
-        const palmWidth = palmImg.width;
-        const palmHeight = palmImg.height;
+    const palmImg1 = AssetManager.images.palm;
+    const palmImg2 = AssetManager.images.palm2;
+    if (palmImg1 && state !== GameState.READY) {
+        const palmWidth = palmImg1.width;
+        const palmHeight = palmImg1.height;
         const palmY = GROUND_Y - palmHeight + 50; // Position at ground level
 
-        // Calculate wrapped offset
+        // Calculate which palm index we're starting at based on scroll offset
+        const startIndex = Math.floor(palmOffset / palmWidth);
         const wrappedOffset = palmOffset % palmWidth;
 
+        // Ensure we have enough pattern entries for visible palms plus buffer
+        const neededPalms = Math.ceil(CANVAS_WIDTH / palmWidth) + 3;
+        while (palmPattern.length < startIndex + neededPalms) {
+            // Randomly assign 0 or 1 for each new palm slot
+            palmPattern.push(Math.random() < 0.5 ? 0 : 1);
+        }
+
         // Draw enough palms to cover the screen plus extra for seamless loop
+        let palmIndex = startIndex;
         for (let x = -wrappedOffset; x < CANVAS_WIDTH + palmWidth; x += palmWidth) {
-            ctx.drawImage(palmImg, x, palmY);
+            const usePalm2 = palmPattern[palmIndex] === 1;
+            const img = (usePalm2 && palmImg2) ? palmImg2 : palmImg1;
+            ctx.drawImage(img, x, palmY);
+            palmIndex++;
         }
     }
 
@@ -950,10 +966,10 @@ function render(ctx) {
 
         // Credits text - bottom left corner
         ctx.textAlign = 'left';
-        ctx.font = "18px 'Tinker Bell', Arial";
+        ctx.font = "14px Arial";
         ctx.lineWidth = 1;
-        ctx.strokeText('Produced by bsims', 10, CANVAS_HEIGHT - 28);
-        ctx.fillText('Produced by bsims', 10, CANVAS_HEIGHT - 28);
+        ctx.strokeText('Produced by bsims', 10, CANVAS_HEIGHT - 24);
+        ctx.fillText('Produced by bsims', 10, CANVAS_HEIGHT - 24);
         ctx.strokeText('Artwork by alphablue and Bib', 10, CANVAS_HEIGHT - 10);
         ctx.fillText('Artwork by alphablue and Bib', 10, CANVAS_HEIGHT - 10);
         ctx.restore();
