@@ -32,6 +32,87 @@ const CEILING_Y = 0;
 const SEED = null; // Set to a number for deterministic runs, null for random
 
 // ============================================
+// LEADERBOARD
+// ============================================
+const LEADERBOARD_KEY = 'tinksHexLeaderboard';
+const MAX_LEADERBOARD_ENTRIES = 10;
+
+function loadLeaderboard() {
+    const data = localStorage.getItem(LEADERBOARD_KEY);
+    return data ? JSON.parse(data) : [];
+}
+
+function saveLeaderboard(leaderboard) {
+    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
+}
+
+function addToLeaderboard(name, score) {
+    const leaderboard = loadLeaderboard();
+    leaderboard.push({ name, score, date: Date.now() });
+    // Sort by score descending
+    leaderboard.sort((a, b) => b.score - a.score);
+    // Keep only top entries
+    const trimmed = leaderboard.slice(0, MAX_LEADERBOARD_ENTRIES);
+    saveLeaderboard(trimmed);
+    return trimmed;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function openLeaderboard() {
+    const leaderboard = loadLeaderboard();
+    const list = document.getElementById('leaderboardList');
+
+    if (leaderboard.length === 0) {
+        list.innerHTML = '<li class="no-scores">No scores yet. Be the first!</li>';
+    } else {
+        list.innerHTML = leaderboard.map((entry, index) => `
+            <li>
+                <span class="rank">#${index + 1}</span>
+                <span class="name">${escapeHtml(entry.name)}</span>
+                <span class="score">${entry.score}</span>
+            </li>
+        `).join('');
+    }
+
+    document.getElementById('leaderboardModal').classList.add('active');
+}
+
+function closeLeaderboard() {
+    document.getElementById('leaderboardModal').classList.remove('active');
+}
+
+function showNameEntry() {
+    document.getElementById('finalScoreDisplay').textContent = score;
+    document.getElementById('playerNameInput').value = '';
+    document.getElementById('nameEntryModal').classList.add('active');
+    document.getElementById('playerNameInput').focus();
+}
+
+function closeNameEntry() {
+    document.getElementById('nameEntryModal').classList.remove('active');
+}
+
+function submitScore() {
+    const nameInput = document.getElementById('playerNameInput');
+    const name = nameInput.value.trim() || 'Anonymous';
+    addToLeaderboard(name, score);
+    closeNameEntry();
+    scoreSubmitted = true;
+    // Show leaderboard after submitting
+    setTimeout(() => {
+        openLeaderboard();
+    }, 300);
+}
+
+// Track if score was submitted this game
+let scoreSubmitted = false;
+
+// ============================================
 // SEEDED RNG (LCG)
 // ============================================
 let rngState;
@@ -650,6 +731,7 @@ function resetGame() {
     palmOffset = 0;
     palmPattern = [];
     score = 0;
+    scoreSubmitted = false;
 
     // Reset timing to prevent accumulated time issues
     lastTime = performance.now();
@@ -762,6 +844,14 @@ function update(dt) {
             bestScore = score;
             localStorage.setItem('flappyBestScore', bestScore.toString());
         }
+        // Show name entry after a short delay
+        if (!scoreSubmitted) {
+            setTimeout(() => {
+                if (state === GameState.GAME_OVER && !scoreSubmitted) {
+                    showNameEntry();
+                }
+            }, 1000);
+        }
         return;
     }
 
@@ -819,6 +909,14 @@ function update(dt) {
             if (score > bestScore) {
                 bestScore = score;
                 localStorage.setItem('flappyBestScore', bestScore.toString());
+            }
+            // Show name entry after a short delay
+            if (!scoreSubmitted) {
+                setTimeout(() => {
+                    if (state === GameState.GAME_OVER && !scoreSubmitted) {
+                        showNameEntry();
+                    }
+                }, 1000);
             }
             return;
         }
@@ -1137,6 +1235,52 @@ async function init() {
 
     initRNG(SEED);
     setupInput();
+
+    // Set up leaderboard modal event listeners
+    const leaderboardBtn = document.getElementById('leaderboardBtn');
+    if (leaderboardBtn) {
+        leaderboardBtn.addEventListener('click', openLeaderboard);
+    }
+
+    // Name entry modal buttons
+    const submitScoreBtn = document.getElementById('submitScoreBtn');
+    const skipScoreBtn = document.getElementById('skipScoreBtn');
+    const playerNameInput = document.getElementById('playerNameInput');
+
+    if (submitScoreBtn) {
+        submitScoreBtn.addEventListener('click', submitScore);
+    }
+
+    if (skipScoreBtn) {
+        skipScoreBtn.addEventListener('click', () => {
+            closeNameEntry();
+            scoreSubmitted = true;
+            // Show leaderboard even when skipping
+            setTimeout(() => {
+                openLeaderboard();
+            }, 300);
+        });
+    }
+
+    // Allow Enter key to submit score
+    if (playerNameInput) {
+        playerNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                submitScore();
+            }
+        });
+    }
+
+    // Close modals when clicking overlay
+    const leaderboardModal = document.getElementById('leaderboardModal');
+    if (leaderboardModal) {
+        leaderboardModal.addEventListener('click', (e) => {
+            if (e.target.id === 'leaderboardModal') {
+                closeLeaderboard();
+            }
+        });
+    }
+
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
 }
